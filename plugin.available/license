@@ -1,0 +1,4 @@
+_reply "
+  <pre>$(_copyright)</pre>
+  <pre>$(_license)</pre>
+"

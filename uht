@@ -1,0 +1,101 @@
+#!/bin/sh
+
+_copyright(){ echo "
+  uht lightweight webserver
+  2014 - anx @ ulzq de (Sebastian Glaser)
+  Licensed under GNU GPL v3"; }
+_license(){ echo "
+  uht is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2, or (at your option)
+  any later version.
+
+  uht is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this software; see the file COPYING.  If not, write to
+  the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+  Boston, MA 02111-1307 USA
+
+  http://www.gnu.org/licenses/gpl.html"; }
+
+_shebang(){ echo "/bin/ash"; }
+
+urldecode(){ # http://hg.cat-v.org/werc/bin/contrib/ulrdecode.awk
+busybox awk '
+  BEGIN { hextab ["0"] = 0; hextab ["8"] = 8; hextab ["1"] = 1; hextab ["9"] = 9; hextab ["2"] = 2; hextab ["A"] = hextab ["a"] = 10; hextab ["3"] = 3; hextab ["B"] = hextab ["b"] = 11; hextab ["4"] = 4; hextab ["C"] = hextab ["c"] = 12; hextab ["5"] = 5; hextab ["D"] = hextab ["d"] = 13; hextab ["6"] = 6; hextab ["E"] = hextab ["e"] = 14; hextab ["7"] = 7; hextab ["F"] = hextab ["f"] = 15; }
+  { decoded = ""; i = 1; len = length ($0);
+    while ( i <= len ) {
+      c = substr ($0, i, 1)
+      if ( c == "%" ) {
+        if ( i+2 <= len ) {
+          c1 = substr ($0, i+1, 1)
+          c2 = substr ($0, i+2, 1)
+          if ( hextab [c1] == "" || hextab [c2] == "" ) {
+            print "WARNING: invalid hex encoding: %" c1 c2 | "cat >&2"
+          } else {
+            code = 0 + hextab [c1] * 16 + hextab [c2] + 0
+            c = sprintf ("%c", code)
+            i = i + 2 }
+        } else { print "WARNING: invalid % encoding: " substr ($0, i, len - i) }
+      } else if ( c == "+" ) { c = " " }
+      decoded = decoded c; ++i }
+    print decoded }'; }
+
+uht(){
+  local p="$OZH/uht/uht.server"
+  local ip="0.0.0.0"
+  local port=9999
+  while echo "@$1" | busybox grep -q "^@-"; do
+    case "$1" in
+      "-d") p="$2";    shift 2;;
+      "-l") ip="$2";   shift 2;;
+      "-p") port="$2"; shift 2;;
+  esac; done
+  printf "$bred uht $R 2014 anx - listening at $bblue $ip $R:$byellow$black $port $R\n"
+  printf ". $OZH/core/core\n. $OZH/uht/uht\nuht_handle_call\n" > "$p"
+  busybox chmod 755 "$p"
+  UHT_ROOT=$(pwd) busybox nc -ll "$ip:$port" -e "$p"; }
+
+_serve_file(){
+  local status=200
+  local mime=$(mimetype "$1"|busybox sed 's/.* //')
+  local length=$(ls -nl "$1"|awk '{print $5}')
+  printf "HTTP/1.0 %s OK\r\n" "$status"
+  printf "%s: %s\r\n" "Content-Encoding" "plain" "Content-Length" "$length" "Content-Type" "$mime" "Date" "$(date|tr -d "\n")" "Server" "uht/0.1"
+  printf "\r\n"; cat "$1"; printf "\r\n\r\n"; }
+
+_list_dir(){ ( cd "$1/"; ls; ) | awk '
+  BEGIN{print "<link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\" /><h1>Index of '"/$request_url"'</h1><ul><li /><a href=..>..</a>"}
+  {printf "<li/> <a href=\"'"$request_url_absolute"'/%s\">%s</a>",$0,$0}
+  END{print "</ul><hr/><b>Server: '"$version"'</b><pre>"}'; _copyright; }
+
+_reply(){
+  [ -z "$status" ]  && local status="200"
+  [ -z "$mime" ]    && local mime="text/html"
+  [ -z "$charset" ] && local charset="utf-8"
+  local data="$1"; local length=$(echo -n "$data"|wc -c)
+  printf "HTTP/1.0 %s OK\r\n" "$status"; printf "%s: %s\r\n" "Content-Encoding" "plain" "Content-Length" "$length" "Content-Type" "$mime; charset=$charset" "Date" $(date) "Server" "$version"; printf "\r\n%s\r\n\r\n" "$data"; }
+
+_read_arg(){ for line in $(echo $request_arg | busybox sed 's/&/\n/g'); do
+  export "_GET_$(echo $line|cut -f1 -d=)"="$(echo $line|cut -f2 -d=)"; done; }
+
+uht_handle_call(){
+  read line; local version="uht/0.1; busybox/1.22"; local request=$(echo $line|cut -f1 -d\ )
+  local request_arg="$(echo $line|cut -f2 -d\ |busybox sed 's/.*?//')"
+  local request_url="$(echo $line|cut -f2 -d\ |busybox sed 's/\/$//;s/^\///;s/\?.*//'|urldecode)"
+  test -z "$request_url" && request_url_absolute="" || request_url_absolute="/$request_url"
+  local request_path="$UHT_ROOT/$request_url"
+  echo "GET $(date)" "$request_url" >&2;
+  if   [ -f "$request_path" ];then _serve_file "$request_path"
+  elif [ -d "$request_path" ];then
+    local o=; for o in "index.html" "index.sh";do
+      [ -f "$request_path/$o" ] && { _serve_file "$request_path/$o"; break; }; done
+    _reply "$(_list_dir "$request_path")"; break;
+  elif [ -f "$OZH/uht/plugin/$request_url" ];then . "$OZH/uht/plugin/$request_url";
+  elif [ "$request_url" = "favicon.ico" ];then printf "HTTP/1.0 200 OK\r\n" "$status"; printf "%s: %s\r\n" "Content-Encoding" "plain" "Content-Length" "1050" "Content-Type" "image/vnd.microsoft.icon" "Date" $(date) "Server" "$version"; printf "\r\n"; printf "AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAADOfd8A79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//Ofd8A79ef//3Xi/+Xglj/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/5eCWP/914v/79ef/+/Xn/+Xglj/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/l4JY/+/Xn//v15//uaRz/7mkc//57dH/+e3R//nt0f/57dH/+e3R//nt0f/57dH/+e3R//nt0f/57dH/+e3R/7W1tf/v15//79ef/7mkc/+5pHP/+e3R//////////////////////////////////////////////////nt0f/57dH/79ef/+/Xn/+5pHP/uaRz//nt0f//////oqtW/663XP+8xmX/yNJq/9Dbbv/b5nP/6f8V/////////////////+/Xn//v15//uaRz/7mkc//57dH///////////+iq1b/rrdc/7zGZf/I0mr/0Ntu/9vmc//k8Hr/6f8V///////v15//79ef/7mkc/+5pHP/+e3R////////////////////////////////////////////////////////////79ef/+/Xn/+5pHP/uaRz//nt0f/914v/hnlc/4Z5XP//////hnlc//////+GeVz///////3Xi/+GeVz/hnlc/+/Xn//v15//uaRz/7mkc//57dH/hnlc//////+GeVz//////4Z5XP//////hnlc//////+GeVz////////////v15//79ef/7mkc/+5pHP/+e3R/4Z5XP//////hnlc//////+GeVz//////4Z5XP//////hnlc///////p/xX/79ef/+/Xn/+5pHP/uaRz//nt0f+GeVz//////4Z5XP//////hnlc/4Z5XP/914v//////4Z5XP+GeVz/hnlc/+/Xn//v15//l4JY/7mkc//57dH//////////////////////4Z5XP////////////////+GeVz/6f8V/+/Xn//v15//79ef//3Xi/+Xglj///////////////////////////+GeVz//////+n/Ff/v15//hnlc/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//Ofd8A79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//Ofd8AgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==" | base64 -d; printf "\r\n\r\n" "$data";
+  else _reply "<h1>404 - File not found</h1><b>$request_path ($request_url)</b><hr/><b>Server: $version</b>"; fi;
+  cat - >/dev/null 2>&1; }
