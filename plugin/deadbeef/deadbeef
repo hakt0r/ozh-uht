@@ -1,0 +1,61 @@
+#!/bin/sh
+
+_copyright(){ echo "
+  uht lightweight webserver - plugin/deadbeef
+  2014 - anx @ ulzq de (Sebastian Glaser)
+  Licensed under GNU GPL v3"; }
+_license(){ echo "
+  uht is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2, or (at your option)
+  any later version.
+
+  uht is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this software; see the file LICENSE.md.  If not, write to
+  the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+  Boston, MA 02111-1307 USA
+
+  http://www.gnu.org/licenses/gpl.html"; }
+
+[ -z "$OZH_INSTALL" ] || _install_deadbeef(){
+  oz install +only +prefix deadbeef default.css \
+    back.svg forward.svg play.svg search.svg stop.svg download.svg \
+    pause.svg refresh.svg signal.svg upload.svg random.svg; }
+[ -z "$OZH_REQUIRE" ] && { _read_arg
+  if [ "$_GET_action" = "license" ]; then
+    _reply "<h1>deadbeef/$(deadbeef --nowplaying "%V")</h1>
+      Copyright © 2009-2012 Alexey Yakovenko and contributors
+      <h1>uht/$UHT_VERSION</h1>
+      <pre>$(_copyright)</pre><hr/>
+      <pre>$(_license)</pre>"
+  elif [ "$_GET_action" = "download" ]; then
+    _serve_file "$(deadbeef --nowplaying "%F" 2>/dev/null)"
+  else
+    local stopped=false
+    [ "$_GET_action" = "pause" ] && _GET_action="play-pause"
+    deadbeef "--$_GET_action" 2>/dev/null; sleep 0.2
+    _reply "
+      <style>$(cat $UHT_PLUG/deadbeef/default.css)</style>
+      <div id=player>
+        <div id=info>
+          <span id=artist>$(deadbeef --nowplaying "%a" 2>/dev/null)</span>
+          <span id=title>$(deadbeef --nowplaying "%t" 2>/dev/null)</span>
+          <span id=path>$(deadbeef --nowplaying "%F" 2>/dev/null)</span>
+        </div>
+        <div id=ctrl>
+          <a id=download href=\"?action=download\">download</a>
+          <a id=prev href=\"?action=prev\">prev</a>
+          <a id=play href=\"?action=play\">play</a>
+$($stopped || echo "\
+          <a id=pause href=\"?action=pause\">pause</a>
+          <a id=stop href=\"?action=stop\">stop</a>
+")
+          <a id=random href=\"?action=random\">random</a>
+          <a id=next href=\"?action=next\">next</a>
+          <a id=upload href=\"?action=upload\">upload</a>
+      </div></div>"; fi; }
