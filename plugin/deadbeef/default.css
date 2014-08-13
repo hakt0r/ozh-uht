@@ -1,0 +1,21 @@
+body { background: black; }
+#info { text-align: center; background: rgb(34, 34, 34); box-shadow: inset rgba(255,255,255,0.1) 0px 0px 7px; border-radius: 3px; padding: 3px; }
+#ctrl { margin: auto; width: 210px; }
+#player { box-shadow: inset rgba(255,255,255,0.1) -2px -2px 7px; background: #111; border-radius: 5px; font-family: monospace; font-size: 10px; padding: 3px; display: inline-block; color: #B8B8B8; position: relative; width: 100%; }
+#path { display: none }
+#artist:after { content:" - " } #path { color:#DDD; }
+a:link, a:active, a:visited {color:#FFF} a:hover {color:#AFF}	
+
+#play, #pause, #prev, #next, #stop, #random, #download, #upload {
+  height: 20px; width: 20px; display: inline-block;
+  text-indent: 100%; white-space: nowrap; overflow: hidden;
+  opacity: .7; }
+#play:hover, #pause:hover, #prev:hover, #next:hover, #stop:hover, #random:hover, #download:hover, #upload:hover { opacity: 1; }
+#prev     { background: url("/deadbeef/back.svg"); }
+#next     { background: url("/deadbeef/forward.svg"); }
+#play     { background: url("/deadbeef/play.svg"); }
+#pause    { background: url("/deadbeef/pause.svg"); }
+#stop     { background: url("/deadbeef/stop.svg"); }
+#random   { background: url("/deadbeef/random.svg"); }
+#download { background: url("/deadbeef/download.svg"); }
+#upload   { background: url("/deadbeef/upload.svg"); }
