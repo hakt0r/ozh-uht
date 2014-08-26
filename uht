@@ -104,14 +104,23 @@ _reply(){
 _read_arg(){ for line in $(echo $request_arg | busybox sed 's/&/\n/g'); do
   export "_GET_$(echo $line|cut -f1 -d=)"="$(echo $line|cut -f2 -d=)"; done; }
 
+basedir(){ printf "%s" "$1" | sed 's/^\///;s/\/.*//'; }
+
 uht_handle_call(){
   read line; local version="uht/0.1; busybox/1.22"; local request=$(echo $line|cut -f1 -d\ )
-  local request_arg="$(echo $line|cut -f2 -d\ |busybox sed 's/.*?//')"
+  local request_arg=
+  match "$line" "\?" && local request_arg="$(echo $line|cut -f2 -d\ |busybox sed 's/.*?//')"
   local request_url="$(echo $line|cut -f2 -d\ |busybox sed 's/\/$//;s/^\///;s/\?.*//'|urldecode)"
+  local request_mode="$(echo $line|cut -f1 -d\ )"
   test -z "$request_url" && request_url_absolute="" || request_url_absolute="/$request_url"
   local request_path="$UHT_ROOT/$request_url"
-  echo "GET $(date)" "$UHT_PLUG/$request_url" >&2;
-  if [ -d "$UHT_PLUG/$request_url" -a -f "$UHT_PLUG/$request_url/$request_url" ];then
+  echo "$request_mode $(date)" "$UHT_PLUG/$request_url $request_arg" >&2;
+  if [ "$request_mode" != "GET" ];then
+    local plugin="$UHT_PLUG/$(basedir $request_url)/$(basedir $request_url)"
+    request_path="$UHT_PLUG/$request_url"
+    . "$plugin"
+    echo $request_path >&2
+  elif [ -d "$UHT_PLUG/$request_url" -a -f "$UHT_PLUG/$request_url/$request_url" ];then
     request_path="$UHT_PLUG/$request_url"
     . "$request_path/$request_url"
   elif [ -f "$UHT_PLUG/$request_url"    ];then _serve_file "$UHT_PLUG/$request_url"

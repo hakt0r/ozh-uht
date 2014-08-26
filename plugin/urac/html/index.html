@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>urac - zombie minimal comeback</title>
+    <link rel="stylesheet" href="/urac/html/default.css" />
+    <script 
+        src="/urac/html/MediaStreamRecorder/MediaStreamRecorder-v1.2.js" 
+        data-require="StereoRecorder,MediaRecorder,WhammyRecorder,GifRecorder"
+        data-scripts-dir="/urac/html/MediaStreamRecorder/">
+    </script>
+    <script src="/urac/html/async.js"></script>
+    <script src="/urac/html/jquery.js"></script>
+    <script src="/urac/html/coffee.js"></script>
+  </head>
+  <body>
+    <div>
+        <button id="play"></button>
+        <button id="stop" disabled></button>
+    </div>
+    <div id="videos-container"></div>
+    <script>
+      $(function(){
+        CoffeeScript.load("/urac/html/urac.coffee")
+      })
+    </script>
+  </body>
+</html>

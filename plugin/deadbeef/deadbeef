@@ -22,10 +22,12 @@ _license(){ echo "
 
   http://www.gnu.org/licenses/gpl.html"; }
 
+[ -z "$MUSIC" ] && export MUSIC="$HOME/Music"
+
 [ -z "$OZH_INSTALL" ] || _install_deadbeef(){
-  oz install +only +prefix deadbeef default.css \
-    back.svg forward.svg play.svg search.svg stop.svg download.svg \
-    pause.svg refresh.svg signal.svg upload.svg random.svg; }
+  for i in default.css coffee.js jquery.js async.js deadbeef.coffee; do
+      _install_asset html/$i; done; }
+
 [ -z "$OZH_REQUIRE" ] && { _read_arg
   if [ "$_GET_action" = "license" ]; then
     _reply "<h1>deadbeef/$(deadbeef --nowplaying "%V")</h1>
@@ -33,13 +35,16 @@ _license(){ echo "
       <h1>uht/$UHT_VERSION</h1>
       <pre>$(_copyright)</pre><hr/>
       <pre>$(_license)</pre>"
-  elif [ "$_GET_action" = "download" ]; then
-    _serve_file "$(deadbeef --nowplaying "%F" 2>/dev/null)"
+  elif [ "$_GET_action" = "library" ]; then  _reply "$(find $(busybox realpath $MUSIC) -type f | awk '/(mp3|mp4|m4a|ogg|flac)$/{print $0}')"
+  elif [ "$_GET_action" = "download" ]; then _serve_file "$(deadbeef --nowplaying "%F" 2>/dev/null)"
   else
     local stopped=false
     [ "$_GET_action" = "pause" ] && _GET_action="play-pause"
     deadbeef "--$_GET_action" 2>/dev/null; sleep 0.2
     _reply "
+      <script type=\"text/javascript\" src=\"/deadbeef/jquery.js\" charset=\"utf-8\"></script>
+      <script type=\"text/javascript\" src=\"/deadbeef/coffee.js\" charset=\"utf-8\"></script>
+      <script type=\"text/javascript\" src=\"/deadbeef/async.js\" charset=\"utf-8\"></script>
       <style>$(cat $UHT_PLUG/deadbeef/default.css)</style>
       <div id=player>
         <div id=info>
@@ -58,4 +63,10 @@ $($stopped || echo "\
           <a id=random href=\"?action=random\">random</a>
           <a id=next href=\"?action=next\">next</a>
           <a id=upload href=\"?action=upload\">upload</a>
-      </div></div>"; fi; }
+        </div>
+        <div id=files>
+          <input id=query type=text value="">
+      </div></div>
+      <script>
+        \$(function(){CoffeeScript.load(\"/deadbeef/deadbeef.coffee\")})
+      </script>"; fi; }

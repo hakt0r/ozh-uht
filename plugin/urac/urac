@@ -1,0 +1,41 @@
+#!/bin/sh
+# urac - uht-processed irac
+
+[ -n "$OZH_INSTALL" ] && _install_urac(){
+  _install_asset assets && cat $OZH/urac/assets | while read a; do _install_asset "$a"; done; }
+
+[ -z "$OZH_REQUIRE" ] && {
+  _read_arg
+  case "$request_mode" in
+    "PUT")
+      printf "HTTP/1.0 200 OK\r\nServer: uht\r\nConnection: close\r\n\r\n"}
+      local length=
+      while read line; do
+        printf "$line" | grep -q "Content-Length" && length=$(echo $line|tr -d '\r\n'|awk '{print $2}')
+        printf "$line" | hd | grep -q "00000000  0d" && break
+        printf "  $line\n" >&2
+      done
+      head -c "$length" >"$request_path"
+      echo "PUT $request_path ($length) bytes" >&2
+      exit 0;;
+    * )
+      case "$_GET_action" in
+        "cut" ) 
+          local p="$OZH/uht/plugin/urac/" a= n=
+          ( cd "$p"
+          for i in $(ls *.webm);do
+            n=$(echo $i|sed 's/.webm//')
+            a="$a -i $i -i $n.ogg"
+          done
+          avconv $a "$p/result.webm"; )
+          _reply OK; return;;
+        "commit" )
+          _reply OK; return;
+          local i="$_GET_idx"
+          local p="$OZH/uht/plugin/urac/"
+          avconv -i "$p/$i.webm" -i "$p/$i.ogg" "$p/$i.out.webm" >&2
+          rm "$p/$i.webm" "$p/$i.ogg"
+          mv "$p/$i.out.webm" "$p/$i.webm"
+          _reply OK; return;;
+        * ) _serve_file "$OZH/uht/plugin/urac/html/index.html";;
+  esac; esac; }
