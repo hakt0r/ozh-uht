@@ -12,11 +12,11 @@ a:link, a:active, a:visited {color:#FFF} a:hover {color:#AFF}
   text-indent: 100%; white-space: nowrap; overflow: hidden;
   opacity: .7; }
 #play:hover, #pause:hover, #prev:hover, #next:hover, #stop:hover, #random:hover, #download:hover, #upload:hover { opacity: 1; }
-#prev     { background: url("/deadbeef/back.svg"); }
-#next     { background: url("/deadbeef/forward.svg"); }
-#play     { background: url("/deadbeef/play.svg"); }
-#pause    { background: url("/deadbeef/pause.svg"); }
-#stop     { background: url("/deadbeef/stop.svg"); }
-#random   { background: url("/deadbeef/random.svg"); }
-#download { background: url("/deadbeef/download.svg"); }
-#upload   { background: url("/deadbeef/upload.svg"); }
+#prev     { background: url("/fricons/back.svg"); }
+#next     { background: url("/fricons/forward.svg"); }
+#play     { background: url("/fricons/play.svg"); }
+#pause    { background: url("/fricons/pause.svg"); }
+#stop     { background: url("/fricons/stop.svg"); }
+#random   { background: url("/fricons/random.svg"); }
+#download { background: url("/fricons/download.svg"); }
+#upload   { background: url("/fricons/upload.svg"); }

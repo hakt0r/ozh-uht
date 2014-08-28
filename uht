@@ -46,23 +46,6 @@ busybox awk '
       decoded = decoded c; ++i }
     print decoded }'; }
 
-uht(){
-  is_set "_uhtc_$1" && { local cmd="$1"; shift; "_uhtc_$cmd" $@; return $?; }
-  local p="$OZH/uht/uht.server"
-  local ip="0.0.0.0"
-  local port=9999
-  while echo "@$1" | busybox grep -q "^@-"; do
-    case "$1" in
-      "-d") p="$2";    shift 2;;
-      "-l") ip="$2";   shift 2;;
-      "-p") port="$2"; shift 2;;
-  esac; done
-  notify-send "uht" "listening at $ip:$port"
-  printf "$bred uht $R 2014 anx - listening at $bblue $ip $R:$byellow$black $port $R\n"
-  printf ". $OZH/core/core\n. $OZH/uht/uht\nuht_handle_call\n" > "$p"
-  busybox chmod 755 "$p"
-  UHT_ROOT="$(pwd)" busybox nc -ll "$ip:$port" -e "$p"; }
-
 _uhtc_plugin(){ _uhtc_p $@; }; _uhtc_p(){
   local p="$UHT_PLUG"; mkdir -p "$p" "$p.available"
   local cmd="$1"; shift || return 42
@@ -73,59 +56,23 @@ _uhtc_plugin(){ _uhtc_p $@; }; _uhtc_p(){
     "i"|"install")    OZH="$p.available" oz install "$1";;
   esac; }
 
-_install_uht(){
+uht(){
+  is_set "_uhtc_$1" && { local cmd="$1"; shift; "_uhtc_$cmd" $@; return $?; }
+  local p="$OZH/uht/handler"
+  local ip="0.0.0.0"
+  local port=9999
+  while echo "@$1" | busybox grep -q "^@-"; do
+    case "$1" in
+      "-d") p="$2";    shift 2;;
+      "-l") ip="$2";   shift 2;;
+      "-p") port="$2"; shift 2;;
+  esac; done
+  notify-send "uht" "listening at $ip:$port"
+  printf "$bred uht $R 2014 anx - listening at $bblue $ip $R:$byellow$black $port $R\n"
+  busybox chmod 755 "$p"
+  if [ -z "$UHT_PIDFILE" ]; then UHT_ROOT="$(pwd)" busybox nc -ll "$ip:$port" -e "$p"
+  else UHT_ROOT="$(pwd)" busybox nc -ll "$ip:$port" -e "$p" & echo $? >"$UHT_PIDFILE"; fi; }
+
+[ -n "$OZH_INSTALL" ] && _install_uht(){
   local p="$UHT_PLUG"; mkdir -p "$p" "$p.available"
   OZH="$p.available" oz install +prefix "$(oz get uht/repo)/plugin" deadbeef/deadbeef; }
-
-_serve_file(){
-  local status=200
-  local mime=$(mimetype "$1"|busybox sed 's/.* //')
-  local length=$(ls -nl "$1"|awk '{print $5}')
-  printf "HTTP/1.0 %s OK\r\n" "$status"
-  printf "%s: %s\r\n" "Content-Encoding" "plain" "Content-Length" "$length" "Content-Type" "$mime" "Date" "$(date|tr -d "\n")" "Server" "uht/0.1"
-  printf "\r\n"; cat "$1"; printf "\r\n\r\n"; }
-
-_serve_dir(){ local o=; for o in "index.html" "index.sh";do
-    [ -f "$request_path/$o" ] && { _serve_file "$request_path/$o"; break; }; done
-  _reply "$(_list_dir "$request_path")"; }
-
-_list_dir(){ ( cd "$1/"; ls; ) | awk '
-  BEGIN{print "<link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\" /><h1>Index of '"/$request_url"'</h1><ul><li /><a href=..>..</a>"}
-  {printf "<li/> <a href=\"'"$request_url_absolute"'/%s\">%s</a>",$0,$0}
-  END{print "</ul><hr/><b>Server: '"$version"'</b><pre>"}'; _copyright; }
-
-_reply(){
-  [ -z "$status" ]  && local status="200"
-  [ -z "$mime" ]    && local mime="text/html"
-  [ -z "$charset" ] && local charset="utf-8"
-  local data="$1"; local length=$(echo -n "$data"|wc -c)
-  printf "HTTP/1.0 %s OK\r\n" "$status"; printf "%s: %s\r\n" "Content-Encoding" "plain" "Content-Length" "$length" "Content-Type" "$mime; charset=$charset" "Date" $(date) "Server" "$version"; printf "\r\n%s\r\n\r\n" "$data"; }
-
-_read_arg(){ for line in $(echo $request_arg | busybox sed 's/&/\n/g'); do
-  export "_GET_$(echo $line|cut -f1 -d=)"="$(echo $line|cut -f2 -d=)"; done; }
-
-basedir(){ printf "%s" "$1" | sed 's/^\///;s/\/.*//'; }
-
-uht_handle_call(){
-  read line; local version="uht/0.1; busybox/1.22"; local request=$(echo $line|cut -f1 -d\ )
-  local request_arg=
-  match "$line" "\?" && local request_arg="$(echo $line|cut -f2 -d\ |busybox sed 's/.*?//')"
-  local request_url="$(echo $line|cut -f2 -d\ |busybox sed 's/\/$//;s/^\///;s/\?.*//'|urldecode)"
-  local request_mode="$(echo $line|cut -f1 -d\ )"
-  test -z "$request_url" && request_url_absolute="" || request_url_absolute="/$request_url"
-  local request_path="$UHT_ROOT/$request_url"
-  echo "$request_mode $(date)" "$UHT_PLUG/$request_url $request_arg" >&2;
-  if [ "$request_mode" != "GET" ];then
-    local plugin="$UHT_PLUG/$(basedir $request_url)/$(basedir $request_url)"
-    request_path="$UHT_PLUG/$request_url"
-    . "$plugin"
-    echo $request_path >&2
-  elif [ -d "$UHT_PLUG/$request_url" -a -f "$UHT_PLUG/$request_url/$request_url" ];then
-    request_path="$UHT_PLUG/$request_url"
-    . "$request_path/$request_url"
-  elif [ -f "$UHT_PLUG/$request_url"    ];then _serve_file "$UHT_PLUG/$request_url"
-  elif [ -f "$request_path"             ];then _serve_file "$request_path"
-  elif [ -d "$request_path"             ];then _serve_dir  "$request_path"
-  elif [ "$request_url" = "favicon.ico" ];then printf "HTTP/1.0 200 OK\r\n" "$status"; printf "%s: %s\r\n" "Content-Encoding" "plain" "Content-Length" "1050" "Content-Type" "image/vnd.microsoft.icon" "Date" $(date) "Server" "$version"; printf "\r\n"; printf "AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAADOfd8A79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//Ofd8A79ef//3Xi/+Xglj/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/5eCWP/914v/79ef/+/Xn/+Xglj/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/uaRz/7mkc/+5pHP/l4JY/+/Xn//v15//uaRz/7mkc//57dH/+e3R//nt0f/57dH/+e3R//nt0f/57dH/+e3R//nt0f/57dH/+e3R/7W1tf/v15//79ef/7mkc/+5pHP/+e3R//////////////////////////////////////////////////nt0f/57dH/79ef/+/Xn/+5pHP/uaRz//nt0f//////oqtW/663XP+8xmX/yNJq/9Dbbv/b5nP/6f8V/////////////////+/Xn//v15//uaRz/7mkc//57dH///////////+iq1b/rrdc/7zGZf/I0mr/0Ntu/9vmc//k8Hr/6f8V///////v15//79ef/7mkc/+5pHP/+e3R////////////////////////////////////////////////////////////79ef/+/Xn/+5pHP/uaRz//nt0f/914v/hnlc/4Z5XP//////hnlc//////+GeVz///////3Xi/+GeVz/hnlc/+/Xn//v15//uaRz/7mkc//57dH/hnlc//////+GeVz//////4Z5XP//////hnlc//////+GeVz////////////v15//79ef/7mkc/+5pHP/+e3R/4Z5XP//////hnlc//////+GeVz//////4Z5XP//////hnlc///////p/xX/79ef/+/Xn/+5pHP/uaRz//nt0f+GeVz//////4Z5XP//////hnlc/4Z5XP/914v//////4Z5XP+GeVz/hnlc/+/Xn//v15//l4JY/7mkc//57dH//////////////////////4Z5XP////////////////+GeVz/6f8V/+/Xn//v15//79ef//3Xi/+Xglj///////////////////////////+GeVz//////+n/Ff/v15//hnlc/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//Ofd8A79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//v15//79ef/+/Xn//Ofd8AgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAEAAA==" | base64 -d; printf "\r\n\r\n" "$data";
-  else _reply "<h1>404 - File not found</h1><b>$request_path ($request_url)</b><hr/><b>Server: $version</b>"; fi;
-  cat - >/dev/null 2>&1; }
