@@ -68,7 +68,7 @@ uht(){
       "-l") ip="$2";   shift 2;;
       "-p") port="$2"; shift 2;;
   esac; done
-  notify-send "uht" "listening at $ip:$port"
+  uht log "listening at $ip:$port"
   printf "$bred uht $R 2014 anx - listening at $bblue $ip $R:$byellow$black $port $R\n"
   busybox chmod 755 "$p"
   if [ -z "$UHT_PIDFILE" ]; then UHT_ROOT="$(pwd)" busybox nc -ll "$ip:$port" -e "$p"
