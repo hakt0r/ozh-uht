@@ -24,9 +24,7 @@ _license(){ echo "
 
 [ -z "$MUSIC" ] && export MUSIC="$HOME/Music"
 
-[ -z "$OZH_INSTALL" ] || _install_deadbeef(){
-  for i in default.css coffee.js jquery.js async.js deadbeef.coffee; do
-      _install_asset html/$i; done; }
+[ -n "$OZH_INSTALL" ] && OZH_INSTALL_HAS_ASSETS=true
 
 [ -z "$OZH_REQUIRE" ] && { _read_arg
   if [ "$_GET_action" = "license" ]; then
