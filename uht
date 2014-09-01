@@ -46,6 +46,7 @@ busybox awk '
       decoded = decoded c; ++i }
     print decoded }'; }
 
+_uhtc_log(){ echo $@ > /tmp/uht.$$; }
 _uhtc_plugin(){ _uhtc_p $@; }; _uhtc_p(){
   local p="$UHT_PLUG"; mkdir -p "$p" "$p.available"
   local cmd="$1"; shift || return 42

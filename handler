@@ -59,7 +59,7 @@ uht_handle_call(){
   local request_mode="$(echo $line|cut -f1 -d\ )"
   test -z "$request_url" && request_url_absolute="" || request_url_absolute="/$request_url"
   local request_path="$UHT_ROOT/$request_url"
-  echo "$request_mode $(date)" "$UHT_PLUG/$request_url $request_arg" >&2;
+  uht log "$request_mode $(date)" "$UHT_PLUG/$request_url $request_arg"
   if [ "$request_mode" != "GET" ];then
     local plugin="$UHT_PLUG/$(basedir $request_url)/$(basedir $request_url)"
     request_path="$UHT_PLUG/$request_url"
