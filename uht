@@ -74,5 +74,6 @@ uht(){
   else UHT_ROOT="$(pwd)" busybox nc -ll "$ip:$port" -e "$p" & echo $? >"$UHT_PIDFILE"; fi; }
 
 [ -n "$OZH_INSTALL" ] && _install_uht(){
+  _install_asset handler
   local p="$UHT_PLUG"; mkdir -p "$p" "$p.available"
   OZH="$p.available" oz install +prefix "$(oz get uht/repo)/plugin" deadbeef/deadbeef; }
