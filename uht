@@ -76,5 +76,8 @@ uht(){
 
 [ -n "$OZH_INSTALL" ] && _install_uht(){
   _install_asset handler
+  _install_asset mimetypes.txt
   local p="$UHT_PLUG"; mkdir -p "$p" "$p.available"
   OZH="$p.available" oz install +prefix "$(oz get uht/repo)/plugin" deadbeef/deadbeef fricons/fricons; }
+
+true

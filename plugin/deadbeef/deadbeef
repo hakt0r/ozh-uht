@@ -40,9 +40,9 @@ _license(){ echo "
     [ "$_GET_action" = "pause" ] && _GET_action="play-pause"
     deadbeef "--$_GET_action" 2>/dev/null; sleep 0.2
     _reply "
-      <script type=\"text/javascript\" src=\"/deadbeef/jquery.js\" charset=\"utf-8\"></script>
-      <script type=\"text/javascript\" src=\"/deadbeef/coffee.js\" charset=\"utf-8\"></script>
-      <script type=\"text/javascript\" src=\"/deadbeef/async.js\" charset=\"utf-8\"></script>
+      <script type=\"text/javascript\" src=\"/deadbeef/html/jquery.js\" charset=\"utf-8\"></script>
+      <script type=\"text/javascript\" src=\"/deadbeef/html/coffee.js\" charset=\"utf-8\"></script>
+      <script type=\"text/javascript\" src=\"/deadbeef/html/async.js\" charset=\"utf-8\"></script>
       <style>$(cat $UHT_PLUG/deadbeef/default.css)</style>
       <div id=player>
         <div id=info>
@@ -66,5 +66,5 @@ $($stopped || echo "\
           <input id=query type=text value="">
       </div></div>
       <script>
-        \$(function(){CoffeeScript.load(\"/deadbeef/deadbeef.coffee\")})
+        \$(function(){CoffeeScript.load(\"/deadbeef/html/deadbeef.coffee\")})
       </script>"; fi; }
