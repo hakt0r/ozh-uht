@@ -33,7 +33,7 @@ _license(){ echo "
       <h1>uht/$UHT_VERSION</h1>
       <pre>$(_copyright)</pre><hr/>
       <pre>$(_license)</pre>"
-  elif [ "$_GET_action" = "library" ]; then  _reply "$(find $(busybox realpath $MUSIC) -type f | awk '/(mp3|mp4|m4a|ogg|flac)$/{print $0}')"
+  elif [ "$_GET_action" = "library" ]; then  _reply "$(find $(Brealpath $MUSIC) -type f | Bawk '/(mp3|mp4|m4a|ogg|flac)$/{print $0}')"
   elif [ "$_GET_action" = "download" ]; then _serve_file "$(deadbeef --nowplaying "%F" 2>/dev/null)"
   else
     local stopped=false

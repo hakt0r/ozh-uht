@@ -2,7 +2,7 @@
 
 _copyright(){ echo "
   uht lightweight webserver
-  2014 - anx @ ulzq de (Sebastian Glaser)
+  2016 - anx @ ulzq de (Sebastian Glaser)
   Licensed under GNU GPL v3"; }
 _license(){ echo "
   uht is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@ _license(){ echo "
 UHT_PLUG="$OZH/uht/plugin"
 UHT_VERSION="0.0.2"
 
-urldecode(){ # http://hg.cat-v.org/werc/bin/contrib/ulrdecode.awk
+urldecode(){ # http://hg.cat-v.org/werc/bin/contrib/ulrdecode.busybox awk
 busybox awk '
   BEGIN { hextab ["0"] = 0; hextab ["8"] = 8; hextab ["1"] = 1; hextab ["9"] = 9; hextab ["2"] = 2; hextab ["A"] = hextab ["a"] = 10; hextab ["3"] = 3; hextab ["B"] = hextab ["b"] = 11; hextab ["4"] = 4; hextab ["C"] = hextab ["c"] = 12; hextab ["5"] = 5; hextab ["D"] = hextab ["d"] = 13; hextab ["6"] = 6; hextab ["E"] = hextab ["e"] = 14; hextab ["7"] = 7; hextab ["F"] = hextab ["f"] = 15; }
   { decoded = ""; i = 1; len = length ($0);
@@ -51,7 +51,9 @@ _uhtc_plugin(){ _uhtc_p $@; }; _uhtc_p(){
   local p="$UHT_PLUG"; mkdir -p "$p" "$p.available"
   local cmd="$1"; shift || return 42
   case "$cmd" in
-    "ls"|"list")      printf "$bgreen$white$bold Active: %s $R $byellow$white$bold Available: %s $R\n" "$(ls "$p")" "$(ls "$p.available")";;
+    "ls"|"list")      printf "$green$bold Active: %s $R $yellow$bold Available: %s $R\n" \
+      "$(ls "$p"|tr "\n" " ")" \
+      "$(ls "$p.available"|tr "\n" " ")";;
     "a"|"activate")   ln -s "$p.available/$1" "$p/";;
     "d"|"deactivate") rm "$p/$1";;
     "i"|"install")    OZH="$p.available" oz install "$1";;
@@ -69,10 +71,10 @@ uht(){
       "-p") port="$2"; shift 2;;
   esac; done
   uht log "listening at $ip:$port"
-  printf "$bred uht $R 2014 anx - listening at $bblue $ip $R:$byellow$black $port $R\n"
+  printf "$bred uht $R 2016 anx - listening at $bblue $ip $R:$byellow$black $port $R\n"
   busybox chmod 755 "$p"
-  if [ -z "$UHT_PIDFILE" ]; then UHT_ROOT="$(pwd)" busybox nc -ll "$ip:$port" -e "$p"
-  else UHT_ROOT="$(pwd)" busybox nc -ll "$ip:$port" -e "$p" & echo $? >"$UHT_PIDFILE"; fi; }
+  if [ -z "$UHT_PIDFILE" ]; then UHT_ROOT="$(pwd)" Bnc -ll "$ip:$port" -e "$p"
+  else UHT_ROOT="$(pwd)" Bnc -ll "$ip:$port" -e "$p" & echo $? >"$UHT_PIDFILE"; fi; }
 
 [ -n "$OZH_INSTALL" ] && _install_uht(){
   _install_asset handler

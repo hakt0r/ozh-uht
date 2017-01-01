@@ -2,7 +2,7 @@ ozh-uht
 ========
 *uht - a micromalist webserver*
 
-* 2008-2014 - anx @ ulzq de (Sebastian Glaser)
+* 2008-2016 - anx @ ulzq de (Sebastian Glaser)
 * Licensed under GNU GPL v3
 
 Installation

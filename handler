@@ -2,7 +2,7 @@
 
 _copyright(){ echo "
   uht lightweight webserver
-  2014 - anx @ ulzq de (Sebastian Glaser)
+  2016 - anx @ ulzq de (Sebastian Glaser)
   Licensed under GNU GPL v3"; }
 _license(){ echo "
   uht is free software; you can redistribute it and/or modify
@@ -23,10 +23,10 @@ _license(){ echo "
   http://www.gnu.org/licenses/gpl.html"; }
 
 _serve_file(){
-  getmime(){ local suffix=$(echo "$1"|sed 's/.*\.//'); awk '/'$suffix'/{ print $1; }' "$OZH/uht/mimetypes.txt" | tail -n1; }
+  getmime(){ local suffix=$(echo "$1"|busybox sed 's/.*\.//'); busybox awk '/ .*'$suffix'/{ print $1; }' "$OZH/uht/mimetypes.txt" | tail -n1; }
   local status=200
   local mime=$(getmime "$1")
-  local length=$(ls -nl "$1"|awk '{print $5}')
+  local length=$(ls -nl "$1"|busybox awk '{print $5}')
   printf "HTTP/1.0 %s OK\r\n" "$status"
   printf "%s: %s\r\n" "Content-Encoding" "plain" "Content-Length" "$length" "Content-Type" "$mime" "Date" "$(date|tr -d "\n")" "Server" "uht/0.1"
   printf "\r\n"; cat "$1"; printf "\r\n\r\n"; }
@@ -35,7 +35,7 @@ _serve_dir(){ local o=; for o in "index.html" "index.sh";do
     [ -f "$request_path/$o" ] && { _serve_file "$request_path/$o"; break; }; done
   _reply "$(_list_dir "$request_path")"; }
 
-_list_dir(){ ( cd "$1/"; ls; ) | awk '
+_list_dir(){ ( cd "$1/"; ls; ) | busybox awk '
   BEGIN{print "<link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\" /><h1>Index of '"/$request_url"'</h1><ul><li /><a href=..>..</a>"}
   {printf "<li/> <a href=\"'"$request_url_absolute"'/%s\">%s</a>",$0,$0}
   END{print "</ul><hr/><b>Server: '"$version"'</b><pre>"}'; _copyright; }
@@ -50,10 +50,11 @@ _reply(){
 _read_arg(){ for line in $(echo $request_arg | busybox sed 's/&/\n/g'); do
   export "_GET_$(echo $line|cut -f1 -d=)"="$(echo $line|cut -f2 -d=)"; done; }
 
-basedir(){ printf "%s" "$1" | sed 's/^\///;s/\/.*//'; }
+basedir(){ printf "%s" "$1" | busybox sed 's/^\///;s/\/.*//'; }
 
 uht_handle_call(){ {
   read line;
+  uht log "REQ: line"
   local version="uht/0.1; busybox/1.22";
   local request="$(echo $line|cut -f1 -d\ )"
   local request_arg=

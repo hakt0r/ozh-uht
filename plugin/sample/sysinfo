@@ -11,6 +11,6 @@ _reply "
   <br><b>HOSTNAME=</b>$(hostname)
   <h2>resolv.conf</h2> <pre>$(cat /etc/resolv.conf)</pre>
   <h2>iwconfig</h2> <pre>$(iwconfig 2>/dev/null)</pre>
-  <h2>ifconfig</h2> <pre>$(busybox ifconfig 2>&1)</pre>
-  <h2>routes</h2>   <pre>$(busybox ip route 2>&1)</pre>
+  <h2>ifconfig</h2> <pre>$(Bifconfig 2>&1)</pre>
+  <h2>routes</h2>   <pre>$(Bip route 2>&1)</pre>
 "
