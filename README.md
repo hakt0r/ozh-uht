@@ -1,6 +1,6 @@
 # Warning
 I abandoned this project in 2014 after (parallel) discovering
-(shellshock)[https://en.wikipedia.org/wiki/Shellshock_(software_bug)].
+[shellshock](https://en.wikipedia.org/wiki/Shellshock_(software_bug)).
 I concluded this is generally a bad idea.
 **Use for research and educational purposes only.**
 
